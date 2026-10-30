@@ -190,13 +190,6 @@ export const SearchGeneralJdView: React.FC = () => {
                   <Eye className="w-3.5 h-3.5 text-blue-600" />
                   <span>เปิดดู JD</span>
                 </button>
-                <button
-                  onClick={() => printDocument(generateJdDocumentHtml(jd), `JD_${jd.unitCode}_${jd.shortCode}`)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors"
-                >
-                  <Printer className="w-3.5 h-3.5 text-slate-600" />
-                  <span>PDF</span>
-                </button>
               </div>
             </div>
           ))}

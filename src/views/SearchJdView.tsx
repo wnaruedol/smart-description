@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { JobDescription } from '../types';
 import { 
@@ -17,6 +17,7 @@ import {
   Info
 } from 'lucide-react';
 import { JdDetailModal } from '../components/JdDetailModal';
+import { Pagination } from '../components/Pagination';
 import { generateJdDocumentHtml, printDocument, downloadJdsAsZip } from '../utils/exportUtils';
 
 export const SearchJdView: React.FC = () => {
@@ -36,10 +37,13 @@ export const SearchJdView: React.FC = () => {
   const [selectedSection, setSelectedSection] = useState('');
 
   // Selection for batch actions
-  // Selection for batch actions
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modalJd, setModalJd] = useState<JobDescription | null>(null);
   const [isExportingZip, setIsExportingZip] = useState(false);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Get allowed JDs for current user's role
   const allowedJds = useMemo(() => {
@@ -90,7 +94,13 @@ export const SearchJdView: React.FC = () => {
     setSelectedDepartment('');
     setSelectedDivision('');
     setSelectedSection('');
+    setCurrentPage(1);
   };
+
+  // Reset current page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedDeputy, selectedAssistant, selectedDepartment, selectedDivision, selectedSection]);
 
   // Filtered List
   const filteredJds = useMemo(() => {
@@ -113,6 +123,13 @@ export const SearchJdView: React.FC = () => {
       return matchesSearch && matchesDeputy && matchesAssistant && matchesDepartment && matchesDivision && matchesSection;
     });
   }, [allowedJds, searchTerm, selectedDeputy, selectedAssistant, selectedDepartment, selectedDivision, selectedSection]);
+
+  // Pagination calculation
+  const totalPages = Math.ceil(filteredJds.length / pageSize) || 1;
+  const paginatedJds = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredJds.slice(start, start + pageSize);
+  }, [filteredJds, currentPage, pageSize]);
 
   // If user cannot access this view at all (e.g. general_employee)
   if (!canAccessSupervisoryJdSearch) {
@@ -225,7 +242,7 @@ export const SearchJdView: React.FC = () => {
               }}
               className="w-full text-xs py-2 px-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-hidden focus:border-indigo-600"
             >
-              <option value="">ทั้งหมด (ทุกสายงาน)</option>
+              <option value="">ทั้งหมด</option>
               {deputyOptions.map(dep => (
                 <option key={dep} value={dep}>{dep}</option>
               ))}
@@ -247,7 +264,7 @@ export const SearchJdView: React.FC = () => {
               }}
               className="w-full text-xs py-2 px-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-hidden focus:border-indigo-600"
             >
-              <option value="">ทั้งหมด (ทุกผู้ช่วย)</option>
+              <option value="">ทั้งหมด</option>
               {assistantOptions.map(asst => (
                 <option key={asst} value={asst}>{asst}</option>
               ))}
@@ -268,7 +285,7 @@ export const SearchJdView: React.FC = () => {
               }}
               className="w-full text-xs py-2 px-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-hidden focus:border-indigo-600"
             >
-              <option value="">ทั้งหมด (ทุกฝ่าย)</option>
+              <option value="">ทั้งหมด</option>
               {departmentOptions.map(dept => (
                 <option key={dept} value={dept}>{dept}</option>
               ))}
@@ -288,7 +305,7 @@ export const SearchJdView: React.FC = () => {
               }}
               className="w-full text-xs py-2 px-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-hidden focus:border-indigo-600"
             >
-              <option value="">ทั้งหมด (ทุกกอง)</option>
+              <option value="">ทั้งหมด</option>
               {divisionOptions.map(div => (
                 <option key={div} value={div}>{div}</option>
               ))}
@@ -305,7 +322,7 @@ export const SearchJdView: React.FC = () => {
               onChange={(e) => setSelectedSection(e.target.value)}
               className="w-full text-xs py-2 px-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-hidden focus:border-indigo-600"
             >
-              <option value="">ทั้งหมด (ทุกแผนก)</option>
+              <option value="">ทั้งหมด</option>
               {sectionOptions.map(sec => (
                 <option key={sec} value={sec}>{sec}</option>
               ))}
@@ -372,75 +389,71 @@ export const SearchJdView: React.FC = () => {
             <p className="font-semibold text-slate-600">ไม่พบข้อมูลตำแหน่งบังคับบัญชาตามเงื่อนไข หรืออยู่นอกเหนือสิทธิ์ที่ได้รับอนุญาต</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
-            {filteredJds.map((jd) => {
-              const isSelected = selectedIds.includes(jd.id);
+          <>
+            <div className="divide-y divide-slate-100">
+              {paginatedJds.map((jd) => {
+                const isSelected = selectedIds.includes(jd.id);
 
-              return (
-                <div
-                  key={jd.id}
-                  className={`p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/80 transition-colors ${
-                    isSelected ? 'bg-indigo-50/20' : ''
-                  }`}
-                >
-                  <div className="flex items-start gap-3.5">
-                    {/* Checkbox */}
-                    <div className="pt-0.5">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleToggleSelect(jd.id)}
-                        className="w-4 h-4 rounded-sm border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-bold text-slate-900 text-sm md:text-base">
-                          {jd.positionTitle}
-                        </span>
-                        <span className="font-mono text-xs font-bold text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded-sm border border-indigo-200">
-                          {jd.shortCode}
-                        </span>
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-sm bg-slate-100 text-slate-700">
-                          {jd.jobLevelTitle}
-                        </span>
+                return (
+                  <div
+                    key={jd.id}
+                    className={`p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/80 transition-colors ${
+                      isSelected ? 'bg-indigo-50/20' : ''
+                    }`}
+                  >
+                    <div className="flex items-start gap-3.5">
+                      {/* Checkbox */}
+                      <div className="pt-0.5">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelect(jd.id)}
+                          className="w-4 h-4 rounded-sm border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        />
                       </div>
 
-                      <div className="text-xs text-indigo-700 font-medium">
-                        {jd.orgPath}
-                      </div>
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-bold text-slate-900 text-sm md:text-base">
+                            {jd.positionTitle}
+                          </span>
+                          <span className="font-mono text-xs font-bold text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded-sm border border-indigo-200">
+                            {jd.shortCode}
+                          </span>
+                        </div>
 
-                      {/*<div className="text-xs text-slate-600 line-clamp-1 pt-0.5">
-                        <span className="font-semibold text-slate-700">วัตถุประสงค์ตำแหน่ง: </span>
-                        {jd.positionObjective}
-                      </div>*/}
+                        <div className="text-xs text-indigo-700 font-medium">
+                          {jd.orgPath}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions for single item */}
+                    <div className="flex items-center gap-2 shrink-0 md:self-center pl-7 md:pl-0">
+                      <button
+                        onClick={() => setModalJd(jd)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors shadow-2xs cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>เปิดดู JD</span>
+                      </button>
                     </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Actions for single item */}
-                  <div className="flex items-center gap-2 shrink-0 md:self-center pl-7 md:pl-0">
-                    <button
-                      onClick={() => setModalJd(jd)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors shadow-2xs cursor-pointer"
-                    >
-                      <Eye className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>เปิดดู JD</span>
-                    </button>
-
-                    <button
-                      onClick={() => printDocument(generateJdDocumentHtml(jd), `JD_${jd.unitCode}_${jd.shortCode}`)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors shadow-2xs cursor-pointer"
-                      title="พิมพ์หรือบันทึกเป็น PDF"
-                    >
-                      <Printer className="w-3.5 h-3.5 text-slate-600" />
-                      <span>PDF</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+            {/* Pagination Controls */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredJds.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              colorTheme="indigo"
+            />
+          </>
         )}
       </div>
 

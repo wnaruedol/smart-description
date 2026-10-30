@@ -38,7 +38,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onOpenRoleSwitch
   const handlePrintMyFd = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (myFd) {
-      printDocument(generateFdDocumentHtml(myFd), `FD_${myFd.code}_${myFd.shortName}`);
+      printDocument(generateFdDocumentHtml(myFd), `FD_${myFd.code}_${myFd.shortName}`, 'landscape');
     }
   };
 
@@ -72,7 +72,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onOpenRoleSwitch
         <div className="absolute -right-12 -bottom-16 w-64 h-64 rounded-full bg-blue-600/10 pointer-events-none blur-2xl" />
       </div>
 
-      {/* 2. My FD & My JD Primary Cards (คลิกเพื่อขยาย เปิดเป็น modal กดโหลด PDF ได้) */}
+      {/* 2. My FD & My JD Primary Cards (คลิกเพื่อขยาย เปิดเป็น modal) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Card 1: FD ของฉัน */}
         <div 
@@ -105,19 +105,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onOpenRoleSwitch
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+          <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-end">
             <span className="text-xs font-semibold text-blue-700 group-hover:underline inline-flex items-center gap-1">
-              <span>คลิกเพื่อขยายดูรายละเอียด</span>
+              <span>ดูรายละเอียด</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </span>
-            <button
-              onClick={handlePrintMyFd}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-              title="พิมพ์เอกสาร FD เป็น PDF"
-            >
-              <Printer className="w-3.5 h-3.5 text-slate-600" />
-              <span>พิมพ์ PDF</span>
-            </button>
           </div>
         </div>
 
@@ -152,19 +144,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onOpenRoleSwitch
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+          <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-end">
             <span className="text-xs font-semibold text-indigo-700 group-hover:underline inline-flex items-center gap-1">
-              <span>คลิกเพื่อขยายดูรายละเอียด</span>
+              <span>ดูรายละเอียด</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </span>
-            <button
-              onClick={handlePrintMyJd}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-              title="พิมพ์เอกสาร JD เป็น PDF"
-            >
-              <Printer className="w-3.5 h-3.5 text-slate-600" />
-              <span>พิมพ์ PDF</span>
-            </button>
           </div>
         </div>
       </div>

@@ -52,21 +52,9 @@ export const Header: React.FC<HeaderProps> = ({ activeMenu, onOpenRoleSwitcher }
   };
 
   return (
-    <header className="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between shrink-0 z-10">
-      {/* Zone 1 & 2: Breadcrumbs & Page Title */}
-      {/*<div className="flex items-center gap-3">
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider hidden sm:inline">
-          SMART Description
-        </span>
-        <ChevronRight className="w-3.5 h-3.5 text-slate-300 hidden sm:inline" />
-        <h1 className="text-sm md:text-base font-bold text-slate-900 truncate">
-          {getMenuTitle(activeMenu)}
-        </h1>
-      </div>
-      */}
-
+    <header className="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-end shrink-0 z-10">
       {/* Zone 3: Role Switcher & User Profile */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 ml-auto">
         {/* Switch Persona / Role Button */}
         <button
           onClick={onOpenRoleSwitcher}

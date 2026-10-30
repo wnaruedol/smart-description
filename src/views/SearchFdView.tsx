@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { FunctionalDescription } from '../types';
 import { 
@@ -17,6 +17,7 @@ import {
   FileText
 } from 'lucide-react';
 import { FdDetailModal } from '../components/FdDetailModal';
+import { Pagination } from '../components/Pagination';
 import { generateFdDocumentHtml, printDocument, downloadFdsAsZip } from '../utils/exportUtils';
 
 export const SearchFdView: React.FC = () => {
@@ -34,6 +35,10 @@ export const SearchFdView: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modalFd, setModalFd] = useState<FunctionalDescription | null>(null);
   const [isExportingZip, setIsExportingZip] = useState(false);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Extract filter options dynamically
   const deputyOptions = useMemo(() => {
@@ -85,7 +90,13 @@ export const SearchFdView: React.FC = () => {
     setSelectedDepartment('');
     setSelectedDivision('');
     setSelectedSection('');
+    setCurrentPage(1);
   };
+
+  // Reset current page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedDeputy, selectedAssistant, selectedDepartment, selectedDivision, selectedSection]);
 
   // Filtered List
   const filteredFds = useMemo(() => {
@@ -108,6 +119,13 @@ export const SearchFdView: React.FC = () => {
       return matchesSearch && matchesDeputy && matchesAssistant && matchesDepartment && matchesDivision && matchesSection;
     });
   }, [fdList, searchTerm, selectedDeputy, selectedAssistant, selectedDepartment, selectedDivision, selectedSection]);
+
+  // Pagination calculation
+  const totalPages = Math.ceil(filteredFds.length / pageSize) || 1;
+  const paginatedFds = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredFds.slice(start, start + pageSize);
+  }, [filteredFds, currentPage, pageSize]);
 
   // Toggle selection
   const handleToggleSelect = (id: string) => {
@@ -174,7 +192,7 @@ export const SearchFdView: React.FC = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="ค้นหาด้วยชื่อตำแหน่ง, ชื่อหน่วยงาน, รหัสหน่วยงาน (เช่น S100240), ชื่อย่อ (เช่น กกพ-ห., หคอ-ห.)..."
+            placeholder="ค้นหาด้วยชื่อตำแหน่ง, ชื่อหน่วยงาน, รหัส SAP (เช่น S100240), ชื่อย่อ (เช่น กกพ-ห., หคอ-ห.)..."
             className="w-full pl-11 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
           />
         </div>
@@ -197,7 +215,7 @@ export const SearchFdView: React.FC = () => {
               }}
               className="w-full text-xs py-2 px-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-hidden focus:border-blue-600"
             >
-              <option value="">ทั้งหมด (ทุกสายงาน)</option>
+              <option value="">ทั้งหมด</option>
               {deputyOptions.map(dep => (
                 <option key={dep} value={dep}>{dep}</option>
               ))}
@@ -219,7 +237,7 @@ export const SearchFdView: React.FC = () => {
               }}
               className="w-full text-xs py-2 px-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-hidden focus:border-blue-600"
             >
-              <option value="">ทั้งหมด (ทุกผู้ช่วย)</option>
+              <option value="">ทั้งหมด</option>
               {assistantOptions.map(asst => (
                 <option key={asst} value={asst}>{asst}</option>
               ))}
@@ -240,7 +258,7 @@ export const SearchFdView: React.FC = () => {
               }}
               className="w-full text-xs py-2 px-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-hidden focus:border-blue-600"
             >
-              <option value="">ทั้งหมด (ทุกฝ่าย)</option>
+              <option value="">ทั้งหมด</option>
               {departmentOptions.map(dept => (
                 <option key={dept} value={dept}>{dept}</option>
               ))}
@@ -260,7 +278,7 @@ export const SearchFdView: React.FC = () => {
               }}
               className="w-full text-xs py-2 px-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-hidden focus:border-blue-600"
             >
-              <option value="">ทั้งหมด (ทุกกอง)</option>
+              <option value="">ทั้งหมด</option>
               {divisionOptions.map(div => (
                 <option key={div} value={div}>{div}</option>
               ))}
@@ -277,7 +295,7 @@ export const SearchFdView: React.FC = () => {
               onChange={(e) => setSelectedSection(e.target.value)}
               className="w-full text-xs py-2 px-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-hidden focus:border-blue-600"
             >
-              <option value="">ทั้งหมด (ทุกแผนก)</option>
+              <option value="">ทั้งหมด</option>
               {sectionOptions.map(sec => (
                 <option key={sec} value={sec}>{sec}</option>
               ))}
@@ -343,75 +361,79 @@ export const SearchFdView: React.FC = () => {
             <p className="font-semibold text-slate-600">ไม่พบข้อมูลหน่วยงานตามเงื่อนไขที่ค้นหา</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
-            {filteredFds.map((fd) => {
-              const isSelected = selectedIds.includes(fd.id);
+          <>
+            <div className="divide-y divide-slate-100">
+              {paginatedFds.map((fd) => {
+                const isSelected = selectedIds.includes(fd.id);
 
-              return (
-                <div
-                  key={fd.id}
-                  className={`p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/80 transition-colors ${
-                    isSelected ? 'bg-blue-50/20' : ''
-                  }`}
-                >
-                  <div className="flex items-start gap-3.5">
-                    {/* Checkbox */}
-                    <div className="pt-0.5">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleToggleSelect(fd.id)}
-                        className="w-4 h-4 rounded-sm border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-bold text-slate-900 text-sm md:text-base">
-                          {fd.name}
-                        </span>
-                        <span className="font-mono text-xs font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-sm border border-blue-200">
-                          {fd.shortName}
-                        </span>
-                        <span className="font-mono text-xs text-slate-500">
-                          รหัส SAP: {fd.code}
-                        </span>
+                return (
+                  <div
+                    key={fd.id}
+                    className={`p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/80 transition-colors ${
+                      isSelected ? 'bg-blue-50/20' : ''
+                    }`}
+                  >
+                    <div className="flex items-start gap-3.5">
+                      {/* Checkbox */}
+                      <div className="pt-0.5">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelect(fd.id)}
+                          className="w-4 h-4 rounded-sm border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
                       </div>
 
-                      <div className="text-xs text-slate-500 flex items-center gap-1.5 flex-wrap">
-                        <span>{fd.orgPath}</span>
-                      </div>
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-bold text-slate-900 text-sm md:text-base">
+                            {fd.name}
+                          </span>
+                          <span className="font-mono text-xs font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-sm border border-blue-200">
+                            {fd.shortName}
+                          </span>
+                          {(fd.levelType === 'deputy' || fd.levelType === 'assistant' || fd.name.includes('ผู้ช่วยผู้ว่าการ') || fd.name.includes('รองผู้ว่าการ')) && (
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-sm bg-[#0681BF]/10 text-[#0681BF] border border-[#0681BF]/30">
+                              {fd.levelType === 'deputy' ? 'สายงานรองผู้ว่าการ' : 'ผู้ช่วยผู้ว่าการ'}
+                            </span>
+                          )}
+                          <span className="font-mono text-xs text-slate-500">
+                            รหัส SAP: {fd.code}
+                          </span>
+                        </div>
 
-                      {/*<div className="text-xs text-slate-600 line-clamp-1 pt-0.5">
-                        <span className="font-semibold text-slate-700">วัตถุประสงค์: </span>
-                        {fd.objective}
-                      </div>*/}
+                        <div className="text-xs text-slate-500 flex items-center gap-1.5 flex-wrap">
+                          <span>{fd.orgPath}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions for single item */}
+                    <div className="flex items-center gap-2 shrink-0 md:self-center pl-7 md:pl-0">
+                      <button
+                        onClick={() => setModalFd(fd)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors shadow-2xs cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-blue-600" />
+                        <span>เปิดดู FD</span>
+                      </button>
                     </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Actions for single item */}
-                  <div className="flex items-center gap-2 shrink-0 md:self-center pl-7 md:pl-0">
-                    <button
-                      onClick={() => setModalFd(fd)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors shadow-2xs cursor-pointer"
-                    >
-                      <Eye className="w-3.5 h-3.5 text-blue-600" />
-                      <span>เปิดดู FD</span>
-                    </button>
-
-                    <button
-                      onClick={() => printDocument(generateFdDocumentHtml(fd), `FD_${fd.code}_${fd.shortName}`)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors shadow-2xs cursor-pointer"
-                      title="พิมพ์หรือบันทึกเป็น PDF"
-                    >
-                      <Printer className="w-3.5 h-3.5 text-slate-600" />
-                      <span>PDF</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+            {/* Pagination Controls */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredFds.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              colorTheme="blue"
+            />
+          </>
         )}
       </div>
 

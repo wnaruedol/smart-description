@@ -23,6 +23,30 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
       <head>
         <meta charset="utf-8">
         <title>JD - ${jd.positionTitle}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+        <style>
+          @page { size: A4 portrait; margin: 10mm 14mm; }
+          body { font-family: 'Sarabun', sans-serif; margin: 0; padding: 24px 0; background: #f1f5f9; }
+          @media print {
+            body { background: #fff; padding: 0; }
+            .jd-page { 
+              border: none !important; 
+              box-shadow: none !important; 
+              margin: 0 !important; 
+              padding: 0 0 8mm 0 !important; 
+              max-width: 100% !important; 
+              min-height: 275mm !important; 
+              page-break-after: always !important; 
+              break-after: page !important;
+            }
+            .jd-page:last-child {
+              page-break-after: avoid !important;
+              break-after: avoid !important;
+            }
+          }
+        </style>
       </head>
       <body>
         ${generateJdDocumentHtml(jd)}
@@ -53,7 +77,7 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
             </div>
             <div>
               <div className="text-xs font-semibold text-indigo-700 tracking-wide">
-                JOB DESCRIPTION (JD)
+                JOB DESCRIPTION
               </div>
               <h2 className="text-lg font-bold text-slate-900">
                 คำบรรยายลักษณะงาน (ตำแหน่งบังคับบัญชา)
@@ -62,14 +86,6 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-xs"
-              title="พิมพ์ / บันทึกเป็น PDF"
-            >
-              <Printer className="w-4 h-4 text-slate-600" />
-              <span>พิมพ์ PDF</span>
-            </button>
             <button
               onClick={handleDownloadHtml}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-xs"
@@ -105,7 +121,7 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
             {/* Official Order details */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
               <div>
-                <span className="text-slate-500 block">รหัสหน่วยงาน:</span>
+                <span className="text-slate-500 block">รหัส SAP:</span>
                 <span className="font-semibold text-slate-800 font-mono text-sm">{jd.unitCode}</span>
               </div>
               <div>
@@ -115,7 +131,6 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
               <div>
                 <span className="text-slate-500 block">มีผลบังคับใช้:</span>
                 <span className="font-semibold text-slate-800 flex items-center gap-1 text-sm">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
                   {jd.effectiveDate}
                 </span>
               </div>
@@ -132,8 +147,7 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
           {/* ส่วนที่ 1 ข้อมูลทั่วไปของตำแหน่งงาน */}
           <div className="border border-slate-200 rounded-lg p-5 bg-white">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 flex items-center justify-between">
-              <span>ส่วนที่ 1 ข้อมูลทั่วไปของตำแหน่งงาน</span>
-              <span className="text-xs font-normal text-slate-500">รหัส: {jd.positionCode}</span>
+              {/*<span className="text-xs font-normal text-slate-500">รหัส: {jd.positionCode}</span>*/}
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -178,7 +192,7 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
           {/* ส่วนที่ 2 วัตถุประสงค์ของตำแหน่งงาน */}
           <div className="border border-slate-200 rounded-lg p-5 bg-white">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100">
-              ส่วนที่ 2 วัตถุประสงค์ของตำแหน่งงาน (Position Purpose)
+              วัตถุประสงค์ของตำแหน่งงาน
             </h3>
             <p className="text-slate-700 leading-relaxed text-sm text-justify bg-indigo-50/20 p-4 rounded-lg border border-indigo-100/50 indent-6">
               {jd.positionObjective}
@@ -189,7 +203,7 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
           <div className="border border-slate-200 rounded-lg p-5 bg-white">
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                ส่วนที่ 3 หน้าที่ความรับผิดชอบและผลลัพธ์ที่คาดหวัง
+                หน้าที่ความรับผิดชอบและผลลัพธ์ที่คาดหวัง
               </h3>
               <span className="text-xs text-slate-500 font-medium">ตาราง 3 คอลัมน์มาตรฐาน</span>
             </div>
@@ -233,7 +247,7 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
           {/* ส่วนที่ 4 คุณสมบัติเฉพาะตำแหน่ง (กรอบสี่เหลี่ยม 4 รายการ) */}
           <div className="border border-slate-200 rounded-lg p-5 bg-white">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100">
-              ส่วนที่ 4 คุณสมบัติเฉพาะตำแหน่ง (Job Specifications)
+              คุณสมบัติเฉพาะตำแหน่ง
             </h3>
             
             {/* Box container for 4 items as requested */}
@@ -242,7 +256,7 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
                 <div className="bg-white p-3.5 rounded-lg border border-slate-200">
                   <div className="text-xs font-bold text-indigo-700 mb-1 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-indigo-600" />
-                    1. คุณสมบัติพื้นฐาน
+                    คุณสมบัติพื้นฐาน
                   </div>
                   <div className="text-xs text-slate-700 leading-relaxed pl-3.5">
                     {jd.qualifications.basicQualifications}
@@ -252,7 +266,7 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
                 <div className="bg-white p-3.5 rounded-lg border border-slate-200">
                   <div className="text-xs font-bold text-indigo-700 mb-1 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-indigo-600" />
-                    2. ระดับการศึกษา
+                    ระดับการศึกษา
                   </div>
                   <div className="text-xs text-slate-700 leading-relaxed pl-3.5">
                     {jd.qualifications.educationLevel}
@@ -262,7 +276,7 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
                 <div className="bg-white p-3.5 rounded-lg border border-slate-200">
                   <div className="text-xs font-bold text-indigo-700 mb-1 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-indigo-600" />
-                    3. คุณวุฒิ / สาขาวิชา
+                    คุณวุฒิ / สาขาวิชา
                   </div>
                   <div className="text-xs text-slate-700 leading-relaxed pl-3.5">
                     {jd.qualifications.fieldsOfStudy}
@@ -272,7 +286,7 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
                 <div className="bg-white p-3.5 rounded-lg border border-slate-200">
                   <div className="text-xs font-bold text-indigo-700 mb-1 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-indigo-600" />
-                    4. ประสบการณ์ทำงาน
+                    ประสบการณ์ทำงาน
                   </div>
                   <div className="text-xs text-slate-700 leading-relaxed pl-3.5">
                     {jd.qualifications.workExperience}
@@ -285,10 +299,6 @@ export const JdDetailModal: React.FC<JdDetailModalProps> = ({ jd, isOpen, onClos
 
         {/* Modal Footer */}
         <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
-          <div className="flex items-center gap-1.5">
-            <FileSpreadsheet className="w-3.5 h-3.5 text-slate-400" />
-            <span>เชื่อมโยงตำแหน่งกับข้อมูลองค์การ (SAP) แบบเรียลไทม์</span>
-          </div>
           <button
             onClick={onClose}
             className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors"

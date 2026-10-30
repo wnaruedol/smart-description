@@ -48,6 +48,8 @@ export interface FunctionalDescription {
   status: 'ใช้งาน' | 'ร่าง' | 'ยกเลิก';
   itemCount: number;
   updatedAt: string;
+  unitSequenceNumber?: string; // e.g. "1."
+  affiliationText?: string;    // e.g. "สังกัด อทบ. ชฟพ. รวห."
 }
 
 export interface JdDutyItem {
@@ -72,12 +74,12 @@ export interface JobDescription {
   shortCode: string;           // กกพ-ห.
   orgPath: string;             // สายรอง > ผู้ช่วย > ฝ่าย > กอง > แผนก
   departmentLine: string;      // สายงาน/ผู้ช่วยผู้ว่าการ/ฝ่าย
-  jobLevelTitle: string;       // เช่น หัวหน้ากอง (ระดับ 10) หรือ หัวหน้าแผนก (ระดับ 8)
+  jobLevelTitle: string;       // เช่น หัวหน้ากอง หรือ หัวหน้าแผนก
   levelNumber: number;         // 7, 8, 9, 10, 11, 12, 13, 14
   isSupervisory: boolean;      // ตำแหน่งบังคับบัญชา
   directSupervisor: string;    // ผู้บังคับบัญชาโดยตรง
   directSubordinates: string[];// ตำแหน่งงานภายใต้การบังคับบัญชาโดยตรง
-  unitCode: string;            // รหัสหน่วยงาน Sxxxxxx
+  unitCode: string;            // รหัส SAP Sxxxxxx
   unitName: string;            // ชื่อหน่วยงาน
   orderNo: string;             // เลขที่คำสั่ง กฟผ. ที่ ค.xxx/25xx
   effectiveDate: string;       // วันที่มีผลบังคับใช้

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { FunctionalDescription, JobDescription, JdDutyItem } from '../types';
 import { MOCK_NEW_UNITS_WAITING_FD } from '../data/mockData';
@@ -21,6 +21,28 @@ import {
 } from 'lucide-react';
 import { FdDetailModal } from '../components/FdDetailModal';
 import { JdDetailModal } from '../components/JdDetailModal';
+import { Pagination } from '../components/Pagination';
+
+const formatThaiDate = (dateStr?: string) => {
+  if (!dateStr) return '-';
+  if (/[ก-๙]/.test(dateStr)) return dateStr;
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const day = d.getDate();
+      const thaiMonths = [
+        'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+        'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+      ];
+      const month = thaiMonths[d.getMonth()];
+      const year = d.getFullYear() + 543;
+      return `${day} ${month} ${year}`;
+    }
+  } catch {
+    // fallback
+  }
+  return dateStr;
+};
 
 export const ManageDataView: React.FC = () => {
   const { 
@@ -64,6 +86,12 @@ export const ManageDataView: React.FC = () => {
   // Delete Confirm State
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'fd' | 'jd'; id: string; name: string } | null>(null);
 
+  // Pagination State for FD and JD tables
+  const [currentFdPage, setCurrentFdPage] = useState(1);
+  const [fdPageSize, setFdPageSize] = useState(10);
+  const [currentJdPage, setCurrentJdPage] = useState(1);
+  const [jdPageSize, setJdPageSize] = useState(10);
+
   // Reset Filters
   const handleResetFilters = () => {
     setSearchTerm('');
@@ -72,7 +100,15 @@ export const ManageDataView: React.FC = () => {
     setSelectedDepartment('');
     setSelectedDivision('');
     setSelectedSection('');
+    setCurrentFdPage(1);
+    setCurrentJdPage(1);
   };
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentFdPage(1);
+    setCurrentJdPage(1);
+  }, [searchTerm, selectedDeputy, selectedAssistant, selectedDepartment, selectedDivision, selectedSection]);
 
   // 1. FD Filtered Data
   const filteredFds = useMemo(() => {
@@ -94,6 +130,12 @@ export const ManageDataView: React.FC = () => {
     });
   }, [fdList, searchTerm, selectedDeputy, selectedAssistant, selectedDepartment, selectedDivision, selectedSection]);
 
+  const totalFdPages = Math.ceil(filteredFds.length / fdPageSize) || 1;
+  const paginatedFds = useMemo(() => {
+    const start = (currentFdPage - 1) * fdPageSize;
+    return filteredFds.slice(start, start + fdPageSize);
+  }, [filteredFds, currentFdPage, fdPageSize]);
+
   // 2. JD Filtered Data
   const filteredJds = useMemo(() => {
     return jdList.filter(jd => {
@@ -114,6 +156,12 @@ export const ManageDataView: React.FC = () => {
       return matchSearch && matchDep && matchAsst && matchDept && matchDiv && matchSec;
     });
   }, [jdList, searchTerm, selectedDeputy, selectedAssistant, selectedDepartment, selectedDivision, selectedSection]);
+
+  const totalJdPages = Math.ceil(filteredJds.length / jdPageSize) || 1;
+  const paginatedJds = useMemo(() => {
+    const start = (currentJdPage - 1) * jdPageSize;
+    return filteredJds.slice(start, start + jdPageSize);
+  }, [filteredJds, currentJdPage, jdPageSize]);
 
   // Delete Action Confirm
   const handleConfirmDelete = () => {
@@ -338,34 +386,45 @@ export const ManageDataView: React.FC = () => {
               <thead className="bg-slate-50 text-slate-700 font-bold uppercase">
                 <tr>
                   <th scope="col" className="px-4 py-3.5">ชื่อหน่วยงาน</th>
-                  <th scope="col" className="px-4 py-3.5">สังกัด (สายการบังคับบัญชา)</th>
-                  <th scope="col" className="px-4 py-3.5">รหัส S</th>
+                  <th scope="col" className="px-4 py-3.5">สายการบังคับบัญชา</th>
+                  <th scope="col" className="px-4 py-3.5">รหัส SAP</th>
+                  <th scope="col" className="px-4 py-3.5 whitespace-nowrap">มีผลบังคับใช้</th>
                   <th scope="col" className="px-4 py-3.5 text-center">สถานะ</th>
-                  <th scope="col" className="px-4 py-3.5 text-right">การจัดการ (Action)</th>
+                  <th scope="col" className="px-4 py-3.5 text-right">การจัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
-                {filteredFds.map((fd) => (
-                  <tr key={fd.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-4 py-3 font-semibold text-slate-900">
-                      <div className="flex items-center gap-2">
-                        <span>{fd.name}</span>
-                        <span className="font-mono text-[11px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-sm border border-blue-200">
-                          {fd.shortName}
+                {filteredFds.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                      ไม่พบข้อมูลหน่วยงานตามเงื่อนไขที่ค้นหา
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedFds.map((fd) => (
+                    <tr key={fd.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-4 py-3 font-semibold text-slate-900">
+                        <div className="flex items-center gap-2">
+                          <span>{fd.name}</span>
+                          <span className="font-mono text-[11px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-sm border border-blue-200">
+                            {fd.shortName}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 max-w-xs truncate" title={fd.orgPath}>
+                        {fd.orgPath}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-semibold text-blue-700">
+                        {fd.code}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap font-medium">
+                        {formatThaiDate(fd.effectiveDate)}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          ● {fd.status}
                         </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-500 max-w-xs truncate" title={fd.orgPath}>
-                      {fd.orgPath}
-                    </td>
-                    <td className="px-4 py-3 font-mono font-semibold text-blue-700">
-                      {fd.code}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        ● {fd.status}
-                      </span>
-                    </td>
+                      </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-1.5">
                         <button
@@ -410,10 +469,19 @@ export const ManageDataView: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={currentFdPage}
+            totalPages={totalFdPages}
+            totalItems={filteredFds.length}
+            pageSize={fdPageSize}
+            onPageChange={setCurrentFdPage}
+            onPageSizeChange={setFdPageSize}
+            colorTheme="blue"
+          />
         </div>
       )}
 
@@ -425,34 +493,45 @@ export const ManageDataView: React.FC = () => {
               <thead className="bg-slate-50 text-slate-700 font-bold uppercase">
                 <tr>
                   <th scope="col" className="px-4 py-3.5">ชื่อตำแหน่งงาน</th>
-                  <th scope="col" className="px-4 py-3.5">สังกัด (สายการบังคับบัญชา)</th>
-                  <th scope="col" className="px-4 py-3.5">รหัส S</th>
+                  <th scope="col" className="px-4 py-3.5">สายการบังคับบัญชา</th>
+                  <th scope="col" className="px-4 py-3.5">รหัส SAP</th>
+                  <th scope="col" className="px-4 py-3.5 whitespace-nowrap">มีผลบังคับใช้</th>
                   <th scope="col" className="px-4 py-3.5 text-center">สถานะ</th>
-                  <th scope="col" className="px-4 py-3.5 text-right">การจัดการ (Action)</th>
+                  <th scope="col" className="px-4 py-3.5 text-right">การจัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
-                {filteredJds.map((jd) => (
-                  <tr key={jd.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-4 py-3 font-semibold text-slate-900">
-                      <div className="flex items-center gap-2">
-                        <span>{jd.positionTitle}</span>
-                        <span className="font-mono text-[11px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-sm border border-indigo-200">
-                          {jd.shortCode}
+                {filteredJds.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                      ไม่พบข้อมูลตำแหน่งงานตามเงื่อนไขที่ค้นหา
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedJds.map((jd) => (
+                    <tr key={jd.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-4 py-3 font-semibold text-slate-900">
+                        <div className="flex items-center gap-2">
+                          <span>{jd.positionTitle}</span>
+                          <span className="font-mono text-[11px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-sm border border-indigo-200">
+                            {jd.shortCode}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 max-w-xs truncate" title={jd.orgPath}>
+                        {jd.orgPath}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-semibold text-indigo-700">
+                        {jd.unitCode}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap font-medium">
+                        {formatThaiDate(jd.effectiveDate)}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          ● {jd.status}
                         </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-500 max-w-xs truncate" title={jd.orgPath}>
-                      {jd.orgPath}
-                    </td>
-                    <td className="px-4 py-3 font-mono font-semibold text-indigo-700">
-                      {jd.unitCode}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        ● {jd.status}
-                      </span>
-                    </td>
+                      </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-1.5">
                         <button
@@ -497,10 +576,19 @@ export const ManageDataView: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={currentJdPage}
+            totalPages={totalJdPages}
+            totalItems={filteredJds.length}
+            pageSize={jdPageSize}
+            onPageChange={setCurrentJdPage}
+            onPageSizeChange={setJdPageSize}
+            colorTheme="indigo"
+          />
         </div>
       )}
 
@@ -694,7 +782,7 @@ const AddFdModal: React.FC<AddFdModalProps> = ({ onClose, onSave }) => {
 
           <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-200">
             <div><span className="font-semibold">สายการบังคับบัญชา:</span> {currentUnit.orgPath}</div>
-            <div><span className="font-semibold">รหัสหน่วยงานย่อ:</span> {currentUnit.shortName}</div>
+            <div><span className="font-semibold">ชื่อหน่วยงานย่อ:</span> {currentUnit.shortName}</div>
           </div>
 
           <div>
@@ -875,7 +963,7 @@ const AddJdModal: React.FC<AddJdModalProps> = ({ fdList, onClose, onSave }) => {
 
   const [positionTitle, setPositionTitle] = useState('');
   const [levelNumber, setLevelNumber] = useState(10);
-  const [jobLevelTitle, setJobLevelTitle] = useState('หัวหน้ากอง (ระดับ 10)');
+  const [jobLevelTitle, setJobLevelTitle] = useState('หัวหน้ากอง');
   const [directSupervisor, setDirectSupervisor] = useState('');
   const [directSubordinatesText, setDirectSubordinatesText] = useState('');
   const [positionObjective, setPositionObjective] = useState('');
